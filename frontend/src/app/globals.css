@@ -1,0 +1,217 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+  Bidveda design tokens. See docs/DESIGN_SYSTEM.md for the reasoning.
+  Light theme only: warm paper background, one pine-green accent, hairline borders.
+*/
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+
+  /* shadcn semantic colours -> our palette */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+
+  /* named product colours, used directly in components */
+  --color-paper: #fbfaf7;
+  --color-sunken: #f4f2ec;
+  --color-line: #e6e2d9;
+  --color-line-strong: #cfcabd;
+  --color-ink: #1c1b18;
+  --color-ink-2: #55524a;
+  --color-ink-3: #6e6a60;
+  --color-pine: #1f5a46;
+  --color-pine-dark: #174638;
+  --color-pine-soft: #e6efea;
+  --color-amber: #9a6700;
+  --color-amber-soft: #f9f1dc;
+  --color-rust: #b42318;
+  --color-rust-soft: #fbebe9;
+  --color-slate-blue: #2f5d8a;
+
+  /* Every box, input and button is 4px (rules.txt: keep rounded-sm). */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.375rem;
+  --radius-2xl: 0.5rem;
+}
+
+:root {
+  --background: #fbfaf7;
+  --foreground: #1c1b18;
+  --card: #ffffff;
+  --card-foreground: #1c1b18;
+  --popover: #ffffff;
+  --popover-foreground: #1c1b18;
+  --primary: #1f5a46;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f2ec;
+  --secondary-foreground: #1c1b18;
+  --muted: #f4f2ec;
+  --muted-foreground: #6e6a60;
+  --accent: #e6efea;
+  --accent-foreground: #174638;
+  --destructive: #b42318;
+  --border: #e6e2d9;
+  --input: #cfcabd;
+  --ring: #1f5a46;
+  --sidebar: #f4f2ec;
+  --sidebar-foreground: #1c1b18;
+  --sidebar-accent: #e6efea;
+  --sidebar-accent-foreground: #174638;
+  --sidebar-border: #e6e2d9;
+  --radius: 0.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-size: 14px;
+    line-height: 22px;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Display and title typography: serif, tight tracking. */
+  .t-display {
+    @apply font-serif text-ink;
+    font-size: clamp(2.375rem, 6vw, 3.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    font-weight: 400;
+  }
+
+  .t-h1 {
+    @apply font-serif text-ink;
+    font-size: clamp(1.75rem, 3vw, 2rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+  }
+
+  .t-h2 {
+    @apply font-serif text-ink;
+    font-size: 1.375rem;
+    line-height: 1.36;
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+
+  .t-h3 {
+    @apply text-ink font-semibold;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .t-body {
+    font-size: 1rem;
+    line-height: 1.625;
+  }
+
+  .t-small {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .t-caption {
+    @apply text-ink-3 font-medium;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  /* Money, days, quantities: mono with tabular figures so columns line up. */
+  .t-figure {
+    @apply font-mono;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ---- react-phone-number-input, restyled to match our inputs ---- */
+.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  --PhoneInputCountrySelect-marginRight: 0;
+  --PhoneInputCountryFlag-height: 0.875rem;
+  --PhoneInputCountryFlag-borderColor: transparent;
+  --PhoneInputCountrySelectArrow-color: var(--color-ink-3);
+  --PhoneInputCountrySelectArrow-opacity: 1;
+}
+
+.PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 2.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--input);
+  border-radius: 0.25rem;
+  background: #fff;
+}
+
+.PhoneInputCountry:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.PhoneInputInput {
+  height: 2.25rem;
+  min-width: 0;
+  flex: 1;
+  padding: 0 0.75rem;
+  border: 1px solid var(--input);
+  border-radius: 0.25rem;
+  background: #fff;
+  font-size: 0.875rem;
+}
+
+.PhoneInputInput:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.PhoneInputInput::placeholder {
+  color: var(--color-ink-3);
+}
+
+/* ---- Swiper pagination dots in our accent ---- */
+.swiper {
+  --swiper-theme-color: var(--color-pine);
+  --swiper-pagination-bullet-inactive-color: var(--color-line-strong);
+  --swiper-pagination-bullet-inactive-opacity: 1;
+}

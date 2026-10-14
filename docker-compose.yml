@@ -1,0 +1,64 @@
+# One command (after copying the two env files, see README):  docker compose up --build
+#   App:      http://localhost:3000
+#   API docs: http://localhost:5000/api/docs
+#
+# There is no env file at the project root. Each app keeps its own:
+#   backend/.env   and   frontend/.env
+# The `environment:` blocks below only override the few values that must differ inside Docker
+# (host names, NODE_ENV, the upload folder). Everything else comes from the two files.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bidveda
+      POSTGRES_PASSWORD: bidveda_dev_password
+      POSTGRES_DB: bidveda
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bidveda -d bidveda"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: bidveda
+      DB_PASSWORD: bidveda_dev_password
+      DB_NAME: bidveda
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    env_file:
+      - ./frontend/.env
+    environment:
+      BACKEND_API_URL: http://backend:5000/api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  uploads:

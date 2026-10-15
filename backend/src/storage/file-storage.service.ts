@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { createReadStream, ReadStream } from 'fs';
 import { access, mkdir, unlink, writeFile } from 'fs/promises';
+import { tmpdir } from 'os';
 import { basename, extname, join, resolve } from 'path';
 import {
   ALLOWED_IMAGES,
@@ -26,11 +27,24 @@ export class FileStorageService implements OnModuleInit {
   private readonly dir: string;
 
   constructor(config: ConfigService<EnvVars, true>) {
-    this.dir = resolve(config.get('UPLOAD_DIR', { infer: true }));
+    const rawDir = config.get('UPLOAD_DIR', { infer: true });
+    // In serverless environments like Vercel or AWS Lambda, /var/task is read-only.
+    // The only writable directory is /tmp.
+    if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      this.dir = join(tmpdir(), 'uploads');
+    } else {
+      this.dir = resolve(rawDir);
+    }
   }
 
   async onModuleInit(): Promise<void> {
-    await mkdir(this.dir, { recursive: true });
+    try {
+      await mkdir(this.dir, { recursive: true });
+    } catch (error) {
+      this.logger.warn(
+        `Could not create upload directory at ${this.dir}: ${error instanceof Error ? error.message : error}`,
+      );
+    }
   }
 
   async save(file: Express.Multer.File | undefined): Promise<StoredFile> {

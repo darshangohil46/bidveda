@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Design Document — Bidveda Mini RFQ Portal | Darshan Gohil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+    }
+
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --ink: #0f172a;
+      --ink-muted: #334155;
+      --ink-subtle: #64748b;
+      --border: #cbd5e1;
+      --border-light: #e2e8f0;
+      --bg-alt: #f8fafc;
+      --code-bg: #f1f5f9;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', "Courier New", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 13.5px; }
+    body {
+      font-family: var(--font-sans);
+      color: var(--ink);
+      background-color: #ffffff;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* Print toolbar (hidden when printing) */
+    .no-print-bar {
+      background: #0f172a;
+      color: #ffffff;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .no-print-bar span { font-weight: 600; font-size: 0.95rem; }
+    .print-btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 0.45rem 1.25rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.15s ease;
+    }
+    .print-btn:hover { background: #0369a1; }
+
+    /* Main Document Sheet Container */
+    .document-sheet {
+      max-width: 860px;
+      margin: 1.5rem auto 3rem;
+      padding: 2.5rem 3rem;
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Header & Title Area */
+    .doc-header {
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    .doc-category {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary-dark);
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+    .doc-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.2;
+      margin-bottom: 0.5rem;
+    }
+    .doc-subtitle {
+      font-size: 1.05rem;
+      color: var(--ink-muted);
+      line-height: 1.4;
+      margin-bottom: 1.25rem;
+    }
+
+    /* Metadata & Submission Block */
+    .meta-box {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem 1.5rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.85rem 1.15rem;
+      font-size: 0.88rem;
+    }
+    .meta-row { display: flex; gap: 0.5rem; }
+    .meta-label { font-weight: 700; color: var(--ink); min-width: 130px; }
+    .meta-val { color: var(--ink-muted); }
+    .meta-val a { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+
+    /* Credentials Card */
+    .credentials-box {
+      margin-top: 1rem;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 0.85rem 1.15rem;
+      font-size: 0.88rem;
+    }
+    .cred-title {
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 0.4rem;
+      font-size: 0.92rem;
+    }
+    .cred-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .cred-col {
+      background: #ffffff;
+      border: 1px solid #dcfce7;
+      border-radius: 4px;
+      padding: 0.5rem 0.65rem;
+    }
+    .cred-role { font-weight: 700; color: var(--ink); font-size: 0.82rem; text-transform: uppercase; margin-bottom: 0.2rem; }
+    .cred-line { font-size: 0.8rem; color: var(--ink-muted); line-height: 1.35; }
+    .cred-line code { background: #f1f5f9; padding: 0.1rem 0.3rem; border-radius: 3px; font-family: var(--font-mono); font-size: 0.85em; }
+
+    /* Section Headings */
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink);
+      border-bottom: 1.5px solid var(--border);
+      padding-bottom: 0.35rem;
+      margin: 2rem 0 0.85rem;
+      break-after: avoid;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 1.25rem 0 0.45rem;
+      break-after: avoid;
+    }
+    p {
+      margin-bottom: 0.75rem;
+      color: var(--ink-muted);
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 0.4rem 0 0.85rem 1.5rem;
+      color: var(--ink-muted);
+    }
+    li { margin-bottom: 0.3rem; }
+    strong { color: var(--ink); font-weight: 600; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.85rem 0 1.25rem;
+      font-size: 0.84rem;
+      break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.65rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--bg-alt);
+      font-weight: 700;
+      color: var(--ink);
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    /* Code & Technical Blocks */
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--code-bg);
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      color: #0f172a;
+    }
+    pre {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: #0f172a;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      margin: 0.75rem 0 1rem;
+      overflow-x: auto;
+      line-height: 1.45;
+      break-inside: avoid;
+      white-space: pre-wrap;
+    }
+    pre code { background: transparent; padding: 0; }
+
+    /* Flow Diagrams in Print */
+    .flow-diagram-box {
+      background: #fdfdfd;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.85rem;
+      margin: 0.85rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      break-inside: avoid;
+    }
+
+    /* Print Specific Styles */
+    @media print {
+      .no-print-bar { display: none !important; }
+      .document-sheet {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+        box-shadow: none;
+      }
+      body {
+        font-size: 11pt;
+        line-height: 1.45;
+        color: #000;
+      }
+      h2 {
+        font-size: 13.5pt;
+        border-bottom: 1pt solid #999;
+        margin-top: 16pt;
+        margin-bottom: 6pt;
+        break-after: avoid;
+      }
+      h3 {
+        font-size: 11pt;
+        margin-top: 10pt;
+        margin-bottom: 4pt;
+        break-after: avoid;
+      }
+      p, li, table {
+        font-size: 9.8pt;
+      }
+      table, pre, .flow-diagram-box, .meta-box, .credentials-box {
+        break-inside: avoid;
+      }
+      a { color: #000; text-decoration: none; }
+      .cred-box, .meta-box { background: #fbfbfb !important; border-color: #ccc !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar with print button (hidden when printed) -->
+  <div class="no-print-bar">
+    <span>Bidveda: Mini RFQ Portal — System Design Document</span>
+    <button class="print-btn" onclick="window.print()">
+      🖨️ Print / Save as PDF
+    </button>
+  </div>
+
+  <div class="document-sheet">
+
+    <!-- Header Block -->
+    <header class="doc-header">
+      <div class="doc-category">Technical Assignment · System Design Specification</div>
+      <h1 class="doc-title">Bidveda Mini RFQ Portal: System Design</h1>
+      <p class="doc-subtitle">
+        Architectural specification covering requirement analysis, state models, database schema, concurrency controls, security boundaries, and validation test suite.
+      </p>
+
+      <div class="meta-box">
+        <div class="meta-row">
+          <span class="meta-label">Candidate Name:</span>
+          <span class="meta-val"><strong>Darshan Gohil</strong></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Position Applied:</span>
+          <span class="meta-val">Backend / Full-Stack Lead Developer</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Live Deployment:</span>
+          <span class="meta-val"><a href="https://bidveda-eg2s.vercel.app/" target="_blank">https://bidveda-eg2s.vercel.app/</a></span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Core Tech Stack:</span>
+          <span class="meta-val">Next.js 16 (App Router) · NestJS 11 · PostgreSQL · TypeORM</span>
+        </div>
+      </div>
+
+      <!-- Verified Test Credentials -->
+      <div class="credentials-box">
+        <div class="cred-title">Verified Test Login Credentials (All passwords: <code>Admin@123</code>)</div>
+        <div class="cred-grid">
+          <div class="cred-col">
+            <div class="cred-role">Super Admin</div>
+            <div class="cred-line">Sign in: <code>/admin/login</code></div>
+            <div class="cred-line">Email: <code>superadmin@bidveda.test</code></div>
+            <div class="cred-line">Pass: <code>Admin@123</code></div>
+          </div>
+          <div class="cred-col">
+            <div class="cred-role">Buyer Account</div>
+            <div class="cred-line">Sign in: <code>/login</code></div>
+            <div class="cred-line">Email: <code>buyer@mail.com</code></div>
+            <div class="cred-line">Pass: <code>Admin@123</code></div>
+          </div>
+          <div class="cred-col">
+            <div class="cred-role">Vendor Account</div>
+            <div class="cred-line">Sign in: <code>/login</code></div>
+            <div class="cred-line">Email: <code>vender@mail.com</code></div>
+            <div class="cred-line">Pass: <code>Admin@123</code></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION 1 -->
+    <section>
+      <h2>1. Requirement Understanding</h2>
+
+      <h3>1.1 The Problem in My Own Words</h3>
+      <p>
+        Procurement conducted via ad-hoc emails and disconnected spreadsheets inevitably loses three foundational guarantees:
+        a <strong>fair, tamper-proof deadline</strong>, an <strong>exact like-for-like comparison</strong>, and an <strong>auditable record of vendor selection</strong>.
+        The portal enforces each of these with server-side invariants:
+      </p>
+      <ul>
+        <li><strong>Server-authoritative deadline:</strong> The deadline is enforced strictly by PostgreSQL's clock timestamp; local device or client time is never trusted.</li>
+        <li><strong>Standardized line-item pricing:</strong> Every vendor prices the identical line items defined by the buyer, ensuring quotes align row by row.</li>
+        <li><strong>Append-only audit history:</strong> Every status transition is logged immutably, and quote revisions never overwrite previous versions.</li>
+      </ul>
+
+      <h3>1.2 Main Flows per Role</h3>
+      <p><strong>Buyer Workflow:</strong></p>
+      <ol>
+        <li>Sign up and sign in at <code>/login</code>.</li>
+        <li>Create an RFQ as a <em>Draft</em>: Title, description, category, standardized line items (name, quantity, unit), structured delivery address, optional budget, deadline timestamp, optional PDF/XLSX specifications.</li>
+        <li>Publish the RFQ. While open, details can be modified; once a vendor submits a quote, line items are permanently locked. After the deadline, no changes are accepted.</li>
+        <li>Observe bids arrive. Access the comparison view to evaluate bids side-by-side (sort by total price, delivery timeline, or submission order).</li>
+        <li>After the deadline passes, award exactly one vendor quote. Competing bids transition to <code>REJECTED</code> automatically.</li>
+      </ol>
+
+      <p><strong>Vendor Workflow:</strong></p>
+      <ol>
+        <li>Sign up and sign in at <code>/login</code>.</li>
+        <li>Browse active open RFQs (filter by keyword, category, location, and deadline range with pagination).</li>
+        <li>Open an RFQ detail, download technical specifications, and submit a quote: Unit price per line item, delivery duration in days, notes, and quote files.</li>
+        <li>Revise the quote as needed prior to the deadline. Each update creates an immutable revision record. Past the deadline, submissions are rejected immediately.</li>
+        <li>Track quote progression through its lifecycle (Submitted, Shortlisted, Accepted, or Rejected).</li>
+      </ol>
+
+      <p><strong>Admin Workflow:</strong></p>
+      <ol>
+        <li>Sign in via the dedicated admin portal at <code>/admin/login</code>.</li>
+        <li>Manage users (activate, deactivate, edit profile), roles, and the dynamic permissions matrix.</li>
+        <li>Inspect marketplace entities (RFQs, quotes, files, status transitions) in read-only mode, and review the append-only audit log.</li>
+      </ol>
+
+      <h3>1.3 Status Lifecycle State Machines</h3>
+      <div class="flow-diagram-box">
+RFQ State Machine:
+  Draft  ──[publish]──▶  Published  ──[deadline passes]──▶  Closed  ──[award]──▶  Awarded
+
+Quote State Machine:
+  Submitted  ──[shortlist]──▶  Shortlisted  ──[award]──▶  Accepted
+      │                                                     ▲
+      └──────────────────────────[award]────────────────────┘
+  Submitted / Shortlisted  ──[competing quote awarded]──▶  Rejected
+      </div>
+
+      <h3>1.4 Scope Boundaries</h3>
+      <p>
+        <strong>In Scope:</strong> Authentication and per-device sessions, RFQ lifecycle management, quote submission and multi-revision ledger, side-by-side comparison, atomic award transaction with history, file upload verification (magic bytes for PDF/XLSX), search and multi-facet filtering with pagination, relational schema with TypeORM migrations, automated test suite, Docker Compose setup, and a metadata-driven admin panel with RBAC.
+      </p>
+      <p>
+        <strong>Deliberately Out of Scope:</strong> Re-opening expired deadlines, quote withdrawals, multi-currency live conversions, complex multi-user corporate organizations, password resets via email, real-time WebSocket streams (HTTP polling utilized), payment checkout, and post-award purchase order execution.
+      </p>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section>
+      <h2>2. Assumptions and Open Questions</h2>
+
+      <p>
+        To ensure deterministic system behavior under all edge cases, the following 18 architectural decisions were established:
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 28px;">#</th>
+            <th style="width: 25%;">Question / Edge Case</th>
+            <th style="width: 35%;">Architectural Decision</th>
+            <th>Justification</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Can vendors see competing quotes?</td>
+            <td><strong>Strictly No.</strong> Vendors only see their own quote.</td>
+            <td>Sealed bids are the essential fairness guarantee of procurement.</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>What happens to previous revisions on update?</td>
+            <td><strong>Preserved immutably</strong> in <code>quote_revisions</code>.</td>
+            <td>Ensures full auditability of price changes over time.</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Can buyers view quotes prior to deadline?</td>
+            <td><strong>Yes</strong>, but awarding is disabled until closed.</td>
+            <td>Allows monitoring market response without biasing competition early.</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Can published RFQs be modified?</td>
+            <td><strong>Yes, until first quote.</strong> Line items lock upon first quote.</td>
+            <td>Prevents moving requirements under vendors who already quoted.</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Whose clock dictates the deadline?</td>
+            <td><code>PostgreSQL clock_timestamp()</code>.</td>
+            <td>Centralized authoritative clock; immune to client or host drift.</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>When does an RFQ become Closed?</td>
+            <td>Lazy evaluation on read/write <strong>plus</strong> minute cron.</td>
+            <td>Guarantees second-precise enforcement even if scheduler is delayed.</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Is Shortlisted mandatory prior to Accepted?</td>
+            <td><strong>No.</strong> Direct award permitted from Submitted.</td>
+            <td>Matches procurement workflows when a clear winner is evident.</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Quote cardinality per vendor?</td>
+            <td><strong>Exactly one quote</strong> (<code>UNIQUE(rfq_id, vendor_id)</code>).</td>
+            <td>Modifications create revisions; prevents bid flooding.</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Outcome for losing quotes upon award?</td>
+            <td>Automatically set to <code>REJECTED</code> atomically.</td>
+            <td>Deterministic terminal lifecycle state recorded in history.</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Handling of late quote submissions?</td>
+            <td>Immediate <code>409 DEADLINE_PASSED</code> refusal.</td>
+            <td>No queuing or silent acceptance of bids past the deadline.</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Monetary calculation format?</td>
+            <td>Integer <strong>minor units (paise)</strong> stored as <code>bigint</code>.</td>
+            <td>Floating-point arithmetic introduces financial rounding drift.</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Admin authentication separation?</td>
+            <td>Dedicated <code>admins</code> table with distinct JWT audience.</td>
+            <td>Eliminates privilege escalation risks from public signup.</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Admin control over marketplace data?</td>
+            <td><strong>Strictly Read-Only.</strong></td>
+            <td>Admins cannot award or modify bids on behalf of buyers.</td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td>User deletion policy?</td>
+            <td><strong>Deactivation only</strong> (soft disable).</td>
+            <td>Historical RFQs and legal bids must retain verifiable owners.</td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td>Allowed file attachment types?</td>
+            <td>PDF and XLSX, max 10MB, max 10 files per record.</td>
+            <td>Covers RFQ specs and vendor technical proposals securely.</td>
+          </tr>
+          <tr>
+            <td>16</td>
+            <td>Geographic location modeling?</td>
+            <td>Structured: Country, State, City, Pincode.</td>
+            <td>Enables exact multi-facet filtering rather than fuzzy text matches.</td>
+          </tr>
+          <tr>
+            <td>17</td>
+            <td>Can vendors browse expired RFQs?</td>
+            <td>Only if they previously submitted a quote.</td>
+            <td>Vendors access their own archive without cluttering discovery.</td>
+          </tr>
+          <tr>
+            <td>18</td>
+            <td>Email notifications requirement?</td>
+            <td>Best-effort asynchronous (logged if no SMTP).</td>
+            <td>Database operations must never fail due to mail server delays.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2.1 Open Inquiries for Product Owner</h3>
+      <p>
+        Points flagged for future policy alignment: (1) Should bids remain sealed from the buyer until the deadline passes? 
+        (2) Should buyers be permitted to extend deadlines if bid participation is low? 
+        (3) What is the formal tie-breaking rule if two vendors quote identical prices and delivery times?
+      </p>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section>
+      <h2>3. Tech Stack and Reasoning</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Technology Selected</th>
+            <th>Primary Engineering Rationale</th>
+            <th>Evaluated Alternatives</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Frontend</strong></td>
+            <td><strong>Next.js 16</strong> (App Router)<br>TypeScript · React 19</td>
+            <td>Server Components reduce client bundle size; Route Handlers serve as a secure BFF (Backend for Frontend) managing <code>HttpOnly</code> cookies securely.</td>
+            <td>Vite SPA (requires exposing tokens to localStorage, vulnerable to XSS); Remix.</td>
+          </tr>
+          <tr>
+            <td><strong>Styling & UI</strong></td>
+            <td><strong>Tailwind CSS v4</strong><br>shadcn/ui (Radix Primitives)</td>
+            <td>Accessible, keyboard-navigable UI components; Swiper library delivers touch-friendly comparison tables on mobile devices.</td>
+            <td>Ant Design / Material UI (heavy runtime styling bundle overhead).</td>
+          </tr>
+          <tr>
+            <td><strong>Backend</strong></td>
+            <td><strong>NestJS 11</strong><br>Express Platform · TypeScript</td>
+            <td>Enterprise architecture with native Dependency Injection, Modular domain design, Guards for fine-grained RBAC, and robust <code>class-validator</code> DTOs.</td>
+            <td>Fastify / Express vanilla (requires extensive boilerplate for DI and enterprise module structure).</td>
+          </tr>
+          <tr>
+            <td><strong>Database</strong></td>
+            <td><strong>PostgreSQL 15+</strong><br>TypeORM 0.3</td>
+            <td>ACID transactional consistency, native row locks (<code>FOR SHARE</code>, <code>FOR UPDATE</code>), partial indexing, and strict CHECK constraints.</td>
+            <td>MongoDB (lacks native multi-table relational integrity for itemized bids); MySQL.</td>
+          </tr>
+          <tr>
+            <td><strong>Auth & Session</strong></td>
+            <td><strong>JWT + Refresh Tokens</strong><br>Dual Realm / Hashed Storage</td>
+            <td>15-minute short-lived memory access tokens paired with 7-day SHA-256 hashed refresh tokens. Revocation is instantaneous on logout or deactivation.</td>
+            <td>Stateful server sessions (requires sticky load balancing or centralized Redis from day one).</td>
+          </tr>
+          <tr>
+            <td><strong>Testing</strong></td>
+            <td><strong>Jest & Supertest</strong><br>Real DB integration suite</td>
+            <td>Tests run against real PostgreSQL database in isolated test transactions; avoids mocking database quirks or locking behaviors.</td>
+            <td>In-memory SQLite (fails to reproduce PostgreSQL lock semantics and dialect constraints).</td>
+          </tr>
+          <tr>
+            <td><strong>Deployment</strong></td>
+            <td><strong>Docker Compose / Vercel</strong><br>Containerized Services</td>
+            <td>One-command deployment producing deterministic runtime environments across local development and production cloud tiers.</td>
+            <td>Platform-specific manual server provisioning.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section>
+      <h2>4. Architecture and Services</h2>
+
+      <div class="flow-diagram-box">
+End-to-End Request Architecture:
+  [Browser Client]
+         │  1. HTML / JS Bundle & API Calls
+         ▼
+  [Next.js 16 Server] (BFF - Port 3000)
+    ├── Route Handlers (/api/*)
+    ├── HttpOnly Refresh Cookie Isolation
+    └── serverApi (Forwarding Gateway with Client IP / User-Agent)
+         │  2. Forwarded Request with Bearer Token
+         ▼
+  [NestJS 11 API Gateway] (Port 5000)
+    ├── Auth & Role Guards (@UserAuth / @AdminAuth)
+    ├── Domain Modules (RFQs, Quotes, Attachments, Admin, Mail)
+    └── Schedulers (Close Expired RFQs Cron)
+         │  3. SQL Transactions with Row Locks
+         ▼
+  [PostgreSQL 15+] (Source of Truth)
+    ├── Relational Schemas & Foreign Keys
+    └── Authoritative Clock (clock_timestamp())
+      </div>
+
+      <h3>4.1 The Three-Layer API Rule</h3>
+      <p>
+        To ensure strict architectural separation and prevent network leakage across UI components, the client enforces a three-tier contract:
+      </p>
+      <pre><code>Component (UI) ──▶ services/*.service.ts ──▶ lib/clientApi.ts ──▶ app/api/**/route.ts ──▶ services-api/*.ts ──▶ lib/serverApi.ts ──▶ NestJS</code></pre>
+      <ul>
+        <li><code>lib/baseApi.ts</code> encapsulates fetch logic, query parameter serialization, and error normalization.</li>
+        <li><strong>Single-Flight 401 Interceptor:</strong> When an access token expires, <code>clientApi</code> intercepts the 401 response and coordinates a single refresh call. Concurrent 401s coalesce into this single flight; upon token renewal, pending requests replay automatically. If refresh fails, session terminates cleanly.</li>
+        <li><strong>Cookie Isolation:</strong> The backend transmits refresh tokens exclusively to the Next.js server, which places them in an <code>HttpOnly; SameSite=Lax; Secure</code> cookie, rendering tokens unreachable to browser JavaScript.</li>
+      </ul>
+
+      <h3>4.2 Dynamic Admin Architecture</h3>
+      <p>
+        A central metadata registry (<code>backend/src/admin/admin-resource.registry.ts</code>) declares all administrative entities once. The system automatically derives permissions, CRUD endpoints, foreign-key lookups, audit logging, and administrative UI tables dynamically.
+      </p>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section>
+      <h2>5. Database Schema and Data Modeling</h2>
+
+      <p>
+        The schema is managed via TypeORM migrations (<code>backend/src/migrations/1760000000000-InitialSchema.ts</code>). Every statement utilizes <code>IF NOT EXISTS</code> for idempotency. Primary keys are UUIDs, and timestamps use <code>timestamptz</code>.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Table Name</th>
+            <th>Primary Columns</th>
+            <th>Indexes & Integrity Constraints</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>users</code></td>
+            <td><code>id uuid</code>, <code>email</code>, <code>password</code> (bcrypt), <code>role</code>, <code>company_name</code>, <code>phone</code>, <code>is_active</code></td>
+            <td><code>UNIQUE(email)</code>, <code>CHECK role IN ('BUYER', 'VENDOR')</code></td>
+          </tr>
+          <tr>
+            <td><code>rfqs</code></td>
+            <td><code>id uuid</code>, <code>buyer_id</code>, <code>title</code>, <code>category</code>, <code>budget_minor</code>, <code>deadline</code>, <code>status</code>, <code>awarded_quote_id</code></td>
+            <td><code>CHECK status</code>, <code>CHECK budget_minor >= 0</code>, <code>INDEX(buyer_id, status)</code>, <code>INDEX(status, deadline)</code></td>
+          </tr>
+          <tr>
+            <td><code>rfq_line_items</code></td>
+            <td><code>id uuid</code>, <code>rfq_id</code>, <code>position</code>, <code>name</code>, <code>quantity numeric(14,3)</code>, <code>unit</code></td>
+            <td><code>UNIQUE(rfq_id, position)</code>, <code>CHECK quantity > 0</code>, <code>ON DELETE CASCADE</code></td>
+          </tr>
+          <tr>
+            <td><code>quotes</code></td>
+            <td><code>id uuid</code>, <code>rfq_id</code>, <code>vendor_id</code>, <code>status</code>, <code>current_revision_no</code>, <code>total_minor</code>, <code>delivery_days</code></td>
+            <td><strong><code>UNIQUE(rfq_id, vendor_id)</code></strong>, <code>INDEX(rfq_id, total_minor)</code>, <code>INDEX(vendor_id)</code></td>
+          </tr>
+          <tr>
+            <td><code>quote_revisions</code></td>
+            <td><code>id uuid</code>, <code>quote_id</code>, <code>revision_no</code>, <code>total_minor</code>, <code>delivery_days</code>, <code>notes</code></td>
+            <td><code>UNIQUE(quote_id, revision_no)</code>; <strong>Immutable append-only</strong></td>
+          </tr>
+          <tr>
+            <td><code>quote_revision_items</code></td>
+            <td><code>id uuid</code>, <code>revision_id</code>, <code>line_item_id</code>, <code>unit_price_minor</code>, <code>line_total_minor</code></td>
+            <td><code>UNIQUE(revision_id, line_item_id)</code>; references line items directly</td>
+          </tr>
+          <tr>
+            <td><code>status_history</code></td>
+            <td><code>id uuid</code>, <code>rfq_id</code>, <code>quote_id</code>, <code>from_status</code>, <code>to_status</code>, <code>actor_name</code>, <code>created_at</code></td>
+            <td><code>INDEX(rfq_id, created_at)</code>; immutable audit ledger</td>
+          </tr>
+          <tr>
+            <td><code>attachments</code></td>
+            <td><code>id uuid</code>, <code>rfq_id</code>, <code>quote_id</code>, <code>original_name</code>, <code>stored_name</code>, <code>mime_type</code></td>
+            <td><code>CHECK ((rfq_id IS NULL) &lt;&gt; (quote_id IS NULL))</code>, <code>UNIQUE(stored_name)</code></td>
+          </tr>
+          <tr>
+            <td><code>user_refresh_tokens</code></td>
+            <td><code>id uuid</code>, <code>user_id</code>, <code>token_hash</code>, <code>expires_at</code>, <code>is_revoked</code>, <code>user_agent</code></td>
+            <td><code>INDEX(user_id)</code>; one record per active device session</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5.1 Handling of Critical Data Requirements</h3>
+      <ul>
+        <li><strong>Line Items:</strong> Represented as an ordered child table. Quotes reference line items by foreign key, making it impossible to submit pricing for non-existent items.</li>
+        <li><strong>Quote Revisions:</strong> The <code>quotes</code> header maintains active totals for fast comparison queries, while <code>quote_revisions</code> and <code>quote_revision_items</code> retain historical snapshots.</li>
+        <li><strong>Status History:</strong> Written within the exact same database transaction as the state change.</li>
+        <li><strong>Monetary Precision:</strong> All calculations execute in integer minor units (paise). Line Total = <code>ROUND(quantity * unit_price_minor)</code>, recomputed on the server to prevent client-side float rounding drift.</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section>
+      <h2>6. API Design and Interface Contracts</h2>
+
+      <p>
+        The API adheres to REST standards under base path <code>/api</code>. Standard error format:
+      </p>
+      <pre><code>{
+  "statusCode": 409,
+  "code": "DEADLINE_PASSED",
+  "message": "The submission deadline has passed. Quotes can no longer be submitted or changed.",
+  "details": { "deadline": "2026-10-16T18:29:59.000Z" }
+}</code></pre>
+
+      <h3>6.1 Representative Endpoint Catalog</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 15%;">Method</th>
+            <th style="width: 35%;">Path</th>
+            <th style="width: 15%;">Auth Guard</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/auth/signup</code></td>
+            <td>Public</td>
+            <td>Register Buyer or Vendor and establish session.</td>
+          </tr>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/rfqs</code></td>
+            <td>Buyer</td>
+            <td>Create Draft RFQ with line items and deadline.</td>
+          </tr>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/rfqs</code></td>
+            <td>Buyer / Vendor</td>
+            <td>Buyer: own RFQs. Vendor: active open RFQs with multi-facet filters.</td>
+          </tr>
+          <tr>
+            <td><code>PATCH</code></td>
+            <td><code>/rfqs/:id</code></td>
+            <td>Buyer (Owner)</td>
+            <td>Edit open RFQ (line items lock upon first quote).</td>
+          </tr>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/rfqs/:id/publish</code></td>
+            <td>Buyer (Owner)</td>
+            <td>Transition DRAFT to PUBLISHED.</td>
+          </tr>
+          <tr>
+            <td><code>PUT</code></td>
+            <td><code>/rfqs/:id/my-quote</code></td>
+            <td>Vendor</td>
+            <td>Submit or revise quote (idempotent; checks deadline).</td>
+          </tr>
+          <tr>
+            <td><code>GET</code></td>
+            <td><code>/rfqs/:id/comparison</code></td>
+            <td>Buyer (Owner)</td>
+            <td>Side-by-side quote comparison matrix with sorting options.</td>
+          </tr>
+          <tr>
+            <td><code>POST</code></td>
+            <td><code>/rfqs/:id/award</code></td>
+            <td>Buyer (Owner)</td>
+            <td>Atomically award chosen quote; reject competing bids.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>6.2 Example Payloads</h3>
+      <p><strong>Quote Submission Request (PUT /api/rfqs/:id/my-quote):</strong></p>
+      <pre><code>{
+  "items": [
+    { "lineItemId": "4e1a6c42-8c45-42a1-9c60-84cf829910a1", "unitPriceMinor": 190000 },
+    { "lineItemId": "7c938d12-1f32-48e0-bb12-91ef234091b2", "unitPriceMinor": 800000 }
+  ],
+  "deliveryDays": 10,
+  "notes": "Revised competitive unit rate."
+}</code></pre>
+
+      <p><strong>Award Request (POST /api/rfqs/:id/award):</strong></p>
+      <pre><code>{
+  "quoteId": "c2d81f44-90aa-43d9-9528-72b160b7201a",
+  "note": "Selected for optimal balance of delivery timeframe and total cost."
+}</code></pre>
+    </section>
+
+    <!-- SECTION 7 -->
+    <section>
+      <h2>7. Key Flows and Concurrency Guarantees</h2>
+
+      <h3>7.1 Quote Submission Prior to Deadline</h3>
+      <ol>
+        <li>Vendor submits pricing form via <code>PUT /api/rfqs/:id/my-quote</code>.</li>
+        <li>The API initializes a database transaction and acquires a shared lock: <code>SELECT ... FROM rfqs WHERE id = $1 FOR SHARE</code>.</li>
+        <li>Validates PostgreSQL's clock: <code>IF deadline &lt;= clock_timestamp() THEN ROLLBACK & RAISE 409 DEADLINE_PASSED</code>.</li>
+        <li>Verifies RFQ is <code>PUBLISHED</code>, validates line item IDs, and recomputes line totals on the server.</li>
+        <li>Locks the vendor's existing quote row (if any). If content changed, inserts <code>quote_revisions</code> record N+1 and updates active totals. If identical, returns current snapshot without redundant writes.</li>
+        <li>Transaction commits, and an asynchronous notification is dispatched.</li>
+      </ol>
+
+      <h3>7.2 Late Quote Rejection Flow</h3>
+      <p>
+        If a quote arrives when <code>clock_timestamp() &gt;= deadline</code>, the transaction aborts with <code>409 DEADLINE_PASSED</code> immediately prior to writing any quote records. Existing quotes remain untouched, and the RFQ flips to <code>CLOSED</code> on the next read or scheduler tick.
+      </p>
+
+      <h3>7.3 Awarding Concurrency Protection</h3>
+      <ol>
+        <li>Buyer selects a vendor and triggers <code>POST /api/rfqs/:id/award</code>.</li>
+        <li>Transaction opens and acquires an exclusive lock: <code>SELECT ... FROM rfqs WHERE id = $1 FOR UPDATE</code>.</li>
+        <li>Verifies RFQ is <code>CLOSED</code>. If already awarded, immediately returns <code>409 RFQ_ALREADY_AWARDED</code>.</li>
+        <li>Updates winning quote to <code>ACCEPTED</code>, all competing quotes to <code>REJECTED</code>, and RFQ to <code>AWARDED</code> atomically.</li>
+        <li>Writes historical records to <code>status_history</code> for each updated record.</li>
+      </ol>
+      <p>
+        Because submissions take a shared lock and awards take an exclusive lock on the RFQ row, in-flight bids finish before an award proceeds, preventing race conditions.
+      </p>
+    </section>
+
+    <!-- SECTION 8 -->
+    <section>
+      <h2>8. Security and Access Control</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Security Vector</th>
+            <th>Implementation Mechanism</th>
+            <th>Threat Mitigated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Sealed Bid Isolation</strong></td>
+            <td>Database queries strictly scoped by <code>vendor_id = caller.id</code>. Competing quotes return <code>404 Not Found</code> rather than <code>403</code>.</td>
+            <td>Prevents ID enumeration, competitive price discovery, or competitor bid espionage.</td>
+          </tr>
+          <tr>
+            <td><strong>Token Security</strong></td>
+            <td>Access tokens held in JavaScript memory only. Refresh tokens stored in <code>HttpOnly; SameSite=Lax; Secure</code> cookies.</td>
+            <td>Nullifies Cross-Site Scripting (XSS) token exfiltration attacks.</td>
+          </tr>
+          <tr>
+            <td><strong>File Validation</strong></td>
+            <td>Magic byte inspection (<code>%PDF-</code> for PDF; ZIP PK header + <code>xl/workbook.xml</code> for XLSX). Random UUID storage names.</td>
+            <td>Prevents disguised executable uploads, path traversal, and file overwrite vulnerabilities.</td>
+          </tr>
+          <tr>
+            <td><strong>Admin Isolation</strong></td>
+            <td>Admins reside in a distinct SQL table with dedicated JWT audience tags. User tokens cannot access admin routes.</td>
+            <td>Prevents privilege escalation via token forgery or public registration exploits.</td>
+          </tr>
+          <tr>
+            <td><strong>Rate Limiting</strong></td>
+            <td>ThrottlerModule: 10 req/min on authentication endpoints, 300 req/min globally. Constant-time bcrypt comparisons.</td>
+            <td>Prevents brute-force credential stuffing and timing side-channel attacks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 9 -->
+    <section>
+      <h2>9. Test Cases and Verification Matrix</h2>
+
+      <p>
+        Automated tests validate critical business logic against a real PostgreSQL instance (<code>backend/.env.test</code>). Run via <code>npm run test:all</code>.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Functional Domain</th>
+            <th>Test Scenario Covered</th>
+            <th>Level</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Auth & Roles</strong></td>
+            <td>Duplicate email rejected (409); weak passwords rejected (400); invalid credentials return 401.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Auth & Roles</strong></td>
+            <td>Refresh token revoked on logout; second device unaffected; deactivated user blocked immediately.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>RFQ Lifecycle</strong></td>
+            <td>Drafts hidden from vendors; editing open RFQ locks line items upon first bid (409).</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>RFQ Lifecycle</strong></td>
+            <td>Past deadlines rejected on publish (400); search filters and pagination functional.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Quotes</strong></td>
+            <td>Totals computed on server; revision 2 preserves revision 1; identical resubmissions do nothing.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Quotes</strong></td>
+            <td>Vendor B receives 404 attempting to inspect Vendor A's quote; vendor cannot access comparison (403).</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Quotes</strong></td>
+            <td>Submissions past deadline return 409 DEADLINE_PASSED; money calculations accurate in paise.</td>
+            <td>E2E / Unit</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Award</strong></td>
+            <td>Awarding before deadline returns 409; winning bid ACCEPTED, losing bids REJECTED atomically.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Award</strong></td>
+            <td>Concurrent award race condition: exactly one succeeds, the other receives 409.</td>
+            <td>E2E Integration</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Files</strong></td>
+            <td>Real PDF/XLSX accepted; renamed executables rejected by magic bytes; secure download headers.</td>
+            <td>E2E / Unit</td>
+            <td><strong>Passed</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 10 -->
+    <section>
+      <h2>10. Scalability and Next Steps</h2>
+
+      <h3>10.1 Bottlenecks at 100x Scale & Mitigation Plan</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Component</th>
+            <th>Bottleneck at 100x Scale</th>
+            <th>Production Architectural Remedy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Session Verification</strong></td>
+            <td>Every API request executes a SQL lookup against <code>user_refresh_tokens</code>.</td>
+            <td>Cache validated session tokens in <strong>Redis</strong> with 10-minute TTL; evict on logout.</td>
+          </tr>
+          <tr>
+            <td><strong>RFQ Search</strong></td>
+            <td><code>ILIKE '%term%'</code> performs sequential table scans across descriptions.</td>
+            <td>Implement <strong>PostgreSQL GIN trigram indexes</strong> (<code>pg_trgm</code>) or OpenSearch cluster.</td>
+          </tr>
+          <tr>
+            <td><strong>Attachment Storage</strong></td>
+            <td>Local disk volumes saturate under high concurrent upload volume.</td>
+            <td>Transition <code>FileStorageService</code> to <strong>AWS S3 / Cloudflare R2</strong> with direct pre-signed URLs.</td>
+          </tr>
+          <tr>
+            <td><strong>Database Connections</strong></td>
+            <td>Hundreds of parallel Next.js workers exhaust PostgreSQL connection limits.</td>
+            <td>Deploy <strong>PgBouncer</strong> for transaction connection pooling and introduce read replicas for comparison queries.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>10.2 Roadmap Enhancements</h3>
+      <ol>
+        <li>Playwright browser end-to-end user journeys for buyer and vendor personas.</li>
+        <li>Transactional outbox pattern for guaranteed email delivery with exponential backoff retries.</li>
+        <li>Structured JSON logging with OpenTelemetry tracing and Prometheus metrics.</li>
+      </ol>
+    </section>
+
+    <!-- ADDENDUM -->
+    <section>
+      <h2>Evolution from Initial Design</h2>
+      <ul>
+        <li><strong>Separation of Admin Identity:</strong> Shifted from a user role enum to an isolated <code>admins</code> table with role permissions and dedicated token audiences, preventing privilege escalation.</li>
+        <li><strong>BFF Token Security:</strong> Moved refresh token management from browser localStorage to Next.js server-side <code>HttpOnly</code> cookies to eliminate XSS token theft vectors.</li>
+        <li><strong>Flexible RFQ Editing:</strong> Refined policy to allow editing descriptions, deadlines, and files of open RFQs until the first quote is received, at which point line items lock permanently.</li>
+      </ul>
+
+      <h2>AI Tools Disclosure</h2>
+      <p>
+        In accordance with the assignment guidelines, AI tools (Antigravity IDE / Gemini) were utilized for:
+      </p>
+      <ul>
+        <li>Scaffolding repetitive TypeScript DTO validation decorators and Jest unit test matrices.</li>
+        <li>Drafting initial migration SQL constraints and synthetic test data fixtures.</li>
+        <li>Cross-referencing PostgreSQL row-level lock semantics (<code>FOR SHARE</code> vs <code>FOR UPDATE</code>) against high-concurrency race condition edge cases.</li>
+      </ul>
+      <p>
+        All core business logic, database transactions, authorization guards, and architectural decisions were designed, reviewed, and verified manually.
+      </p>
+    </section>
+
+  </div>
+
+</body>
+</html>
